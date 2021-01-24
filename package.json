@@ -1,0 +1,50 @@
+{
+  "name": "cache-i",
+  "version": "0.1.0",
+  "description": "A simple cache interface inspired by the one Laravel is using, with its own cache manager.",
+  "main": "index.js",
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "scripts": {
+    "eslint": "eslint . --no-error-on-unmatched-pattern",
+    "eslint:fix": "eslint . --no-error-on-unmatched-pattern --fix",
+    "jest": "npm-run-all jest:clear jest:default",
+    "jest:clear": "jest --clearCache",
+    "jest:default": "jest --runInBand",
+    "jest:dev": "jest --runInBand --coverage --logHeapUsage",
+    "test": "npm-run-all eslint jest",
+    "test:dev": "npm-run-all jest:clear jest:dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lambdadeltadot/cache-i.git"
+  },
+  "keywords": [
+    "cache",
+    "cache-interface",
+    "cache-manager",
+    "cache-i"
+  ],
+  "author": "Darwin <lambdadeltadot@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lambdadeltadot/cache-i/issues"
+  },
+  "homepage": "https://github.com/lambdadeltadot/cache-i#readme",
+  "devDependencies": {
+    "@types/jest": "^26.0.20",
+    "eslint": "^7.18.0",
+    "eslint-config-semistandard": "^15.0.1",
+    "eslint-config-standard": "^16.0.2",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jest": "^24.1.3",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^5.0.0",
+    "husky": "^4.3.8",
+    "jest": "^26.6.3",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^4.1.3"
+  }
+}
