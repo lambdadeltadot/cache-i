@@ -1,6 +1,6 @@
 {
-  "name": "cache-i",
-  "version": "0.1.0",
+  "name": "@lambdadeltadot/cache-i",
+  "version": "0.0.0",
   "description": "A simple cache interface inspired by the one Laravel is using, with its own cache manager.",
   "main": "index.js",
   "engines": {
@@ -19,6 +19,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lambdadeltadot/cache-i.git"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "keywords": [
     "cache",

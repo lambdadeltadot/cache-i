@@ -7,13 +7,13 @@ A simple cache interface inspired by the one Laravel is using. This package incl
 Using `npm`:
 
 ```bash
-npm install cache-i
+npm install @lambdadeltadot/cache-i
 ```
 
 Using yarn:
 
 ```bash
-yarn add cache-i
+yarn add @lambdadeltadot/cache-i
 ```
 
 ## Compatibility
@@ -29,20 +29,20 @@ The cache manager stores the `Cache` instance to be used throughout your applica
 You can use the shared cache manager instance by importing the package.
 
 ```js
-const manager = require('cache-i');
+const manager = require('@lambdadeltadot/cache-i');
 ```
 
-You can also create your own instance using `cache-i/CacheManager`.
+You can also create your own instance using `@lambdadeltadot/cache-i/CacheManager`.
 
 ```js
-const CacheManager = require('cache-i/CacheManager');
+const CacheManager = require('@lambdadeltadot/cache-i/CacheManager');
 const manager = new CacheManager();
 ```
 
 If you are not satisfied with the current implementation of a method of the `CacheManager`, you can create a new class that extends `CacheManager` then override the method you want to override.
 
 ```js
-const BaseCacheManager = require('cache-i/CacheManager');
+const BaseCacheManager = require('@lambdadeltadot/cache-i/CacheManager');
 
 class CacheManager extends BaseCacheManager {
   // override implementation here
@@ -51,10 +51,10 @@ class CacheManager extends BaseCacheManager {
 const manager = new CacheManager();
 ```
 
-You can also create your own implementation of the `CacheManager`, just create a class then extends it from `cache-i/Interface/CacheManager`. Check out the `Methods` section of the `CacheManager` for the methods to implement.
+You can also create your own implementation of the `CacheManager`, just create a class then extends it from `@lambdadeltadot/cache-i/Interface/CacheManager`. Check out the `Methods` section of the `CacheManager` for the methods to implement.
 
 ```js
-const CacheManagerInterface = require('cache-i/Interface/CacheManager');
+const CacheManagerInterface = require('@lambdadeltadot/cache-i/Interface/CacheManager');
 
 class CacheManager extends CacheManagerInterface {
   // your own implementation
@@ -162,8 +162,8 @@ The interface to use for classes that can be registered to the cache manager.
 As this class is acting as an interface, you must create a class, extends it with the interface, then implements its method. After that you can create an instance of the newly created class then register it on the `CacheManager`.
 
 ```js
-const Cache = require('cache-i/Interface/Cache');
-const manager = require('cache-i');
+const Cache = require('@lambdadeltadot/cache-i/Interface/Cache');
+const manager = require('@lambdadeltadot/cache-i');
 
 class MemoryCache extends Cache {
   // method implementation here
