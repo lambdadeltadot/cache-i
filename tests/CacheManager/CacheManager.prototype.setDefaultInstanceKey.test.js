@@ -1,7 +1,6 @@
 const CacheManager = require('../../CacheManager');
-const Cache = require('../../Interface/Cache');
 
-describe('CacheManager.prototype.setDefault(key)', () => {
+describe('CacheManager.prototype.setDefaultInstanceKey(key)', () => {
   /**
    * @type {CacheManager}
    */
@@ -14,24 +13,24 @@ describe('CacheManager.prototype.setDefault(key)', () => {
   describe('key param is null', () => {
     describe('default key is null', () => {
       beforeEach(() => {
-        instance._default = null;
+        instance._defaultInstanceKey = null;
       });
 
       test('should set default key to null', () => {
-        instance.setDefault(null);
-        expect(instance._default).toBeNull();
+        instance.setDefaultInstanceKey(null);
+        expect(instance._defaultInstanceKey).toBeNull();
       });
     });
 
     describe('default key is not null', () => {
       beforeEach(() => {
-        const defaultKey = instance._default = 'not null';
-        instance._list[defaultKey] = new Cache();
+        const defaultKey = instance._defaultInstanceKey = 'not null';
+        instance._instanceList[defaultKey] = {};
       });
 
       test('should set default key to null', () => {
-        instance.setDefault(null);
-        expect(instance._default).toBeNull();
+        instance.setDefaultInstanceKey(null);
+        expect(instance._defaultInstanceKey).toBeNull();
       });
     });
   });
@@ -42,39 +41,39 @@ describe('CacheManager.prototype.setDefault(key)', () => {
     describe('given key does not exists', () => {
       describe('default key is null', () => {
         beforeEach(() => {
-          instance._default = null;
+          instance._defaultInstanceKey = null;
         });
 
         test('should throw ReferenceError', () => {
-          expect(() => instance.setDefault(key)).toThrowError(ReferenceError);
+          expect(() => instance.setDefaultInstanceKey(key)).toThrowError(ReferenceError);
         });
       });
 
       describe('default key is not null', () => {
         beforeEach(() => {
-          const defaultKey = instance._default = 'not null';
-          instance._list[defaultKey] = new Cache();
+          const defaultKey = instance._defaultInstanceKey = 'not null';
+          instance._instanceList[defaultKey] = {};
         });
 
         test('should throw ReferenceError', () => {
-          expect(() => instance.setDefault(key)).toThrowError(ReferenceError);
+          expect(() => instance.setDefaultInstanceKey(key)).toThrowError(ReferenceError);
         });
       });
     });
 
     describe('given key does exists', () => {
       beforeEach(() => {
-        instance._list[key] = new Cache();
+        instance._instanceList[key] = {};
       });
 
       describe('default key is null', () => {
         beforeEach(() => {
-          instance._default = null;
+          instance._defaultInstanceKey = null;
         });
 
         test('should set to the given key', () => {
-          instance.setDefault(key);
-          expect(instance._default).toBe(key);
+          instance.setDefaultInstanceKey(key);
+          expect(instance._defaultInstanceKey).toBe(key);
         });
       });
 
@@ -82,14 +81,14 @@ describe('CacheManager.prototype.setDefault(key)', () => {
         const defaultKey = 'not null';
 
         beforeEach(() => {
-          instance._default = defaultKey;
-          instance._list[defaultKey] = new Cache();
+          instance._defaultInstanceKey = defaultKey;
+          instance._instanceList[defaultKey] = {};
         });
 
         test('should set to the given key', () => {
-          instance.setDefault(key);
-          expect(instance._default).toBe(key);
-          expect(instance._default).not.toBe(defaultKey);
+          instance.setDefaultInstanceKey(key);
+          expect(instance._defaultInstanceKey).toBe(key);
+          expect(instance._defaultInstanceKey).not.toBe(defaultKey);
         });
       });
     });

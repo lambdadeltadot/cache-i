@@ -1,7 +1,6 @@
 const CacheManager = require('../../CacheManager');
-const Cache = require('../../Interface/Cache');
 
-describe('CacheManager.prototype.unregister(key)', () => {
+describe('CacheManager.prototype.unregisterInstance(key)', () => {
   /**
    * @type {CacheManager}
    */
@@ -13,7 +12,7 @@ describe('CacheManager.prototype.unregister(key)', () => {
 
   describe('key is null', () => {
     test('should throw TypeError', () => {
-      expect(() => instance.unregister(null)).toThrowError(TypeError);
+      expect(() => instance.unregisterInstance(null)).toThrowError(TypeError);
     });
   });
 
@@ -22,24 +21,24 @@ describe('CacheManager.prototype.unregister(key)', () => {
 
     describe('key does not exists', () => {
       beforeEach(() => {
-        delete instance._list[key];
+        delete instance._instanceList[key];
       });
 
       test('should do nothing to the list', () => {
-        const oldList = { ...instance._list };
-        instance.unregister(key);
-        expect(instance._list).toStrictEqual(oldList);
+        const oldList = { ...instance._instanceList };
+        instance.unregisterInstance(key);
+        expect(instance._instanceList).toStrictEqual(oldList);
       });
     });
 
     describe('key does exists', () => {
       beforeEach(() => {
-        instance._list[key] = new Cache();
+        instance._instanceList[key] = {};
       });
 
       test('should remove the key from the list', () => {
-        instance.unregister(key);
-        expect(instance._list[key]).toBeUndefined();
+        instance.unregisterInstance(key);
+        expect(instance._instanceList[key]).toBeUndefined();
       });
     });
   });
