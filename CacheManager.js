@@ -1,147 +1,199 @@
-const BaseCacheManager = require('./Interface/CacheManager');
-const Cache = require('./Interface/Cache');
+const getInstance = require('./utils/getInstance');
 
 /**
  * Manages multiple cache instances.
  *
- * @extends {BaseCacheManager}
+ * @implements {import('@lambdadeltadot/cache-i').ICacheManager}
  */
-class CacheManager extends BaseCacheManager {
-  /**
-   * Creates an instance.
-   */
+class CacheManager {
   constructor () {
-    super();
-
     /**
-     * The key of the instance that will be used as the
-     * default one.
+     * The key of the instance that will be used as the default one.
      *
      * @protected
      *
      * @type {null|string}
      */
-    this._default = null;
+    this._defaultInstanceKey = null;
 
     /**
-     * The list of instances.
+     * The list of cache instance registered to this manager.
      *
      * @protected
      *
-     * @type {{[key: string]: import('./Interface/Cache')}}
+     * @type {import('@lambdadeltadot/cache-i').CacheInstanceList}
      */
-    this._list = {};
+    this._instanceList = {};
   }
 
+  // ================================================================================
+  // CACHE MANAGER IMPLEMENTATION
+  // ================================================================================
+
   /**
-   * @inheritdoc
+   * Get the default instance if it exists. Will get the first
+   * instance on the instance list if default instance key is
+   * not yet set.
    *
-   * @throws {RangeError}     when the manager's list is empty
+   * @returns {import('@lambdadeltadot/cache-i').ICache}
+   *
+   * @throws {RangeError} when instance list is empty and default instance key is not yet set
    * @throws {ReferenceError} when the currently set default key does not exists
    */
-  default () {
-    if (this._default === null) {
-      for (const key in this._list) { // eslint-disable-line no-unreachable-loop
-        return this._list[key];
+  getDefaultInstance () {
+    if (this._defaultInstanceKey === null) {
+      for (const key in this._instanceList) { // eslint-disable-line no-unreachable-loop
+        return this._instanceList[key];
       }
 
-      throw new RangeError('list is empty');
+      throw new RangeError('instance list is empty');
     }
 
-    return this._get(this._default);
+    return getInstance(this._instanceList, this._defaultInstanceKey);
   }
 
   /**
-   * @inheritdoc
+   * Get the instance with the given key. If given key is null, returns the
+   * default instance.
    *
-   * @throws {RangeError}     when given key is null and the manager's list is empty
-   * @throws {ReferenceError} when the given key is not null and that key does not exists on the list
+   * @param {string} [key=null] the key of the instance to get
+   *
+   * @returns {import('@lambdadeltadot/cache-i').ICache} the instance with the given key, or the default instance if given key is null
+   *
+   * @throws {RangeError} when instance list is empty and given key is null
+   * @throws {ReferenceError} when the given key does not exist
    */
-  instance (key = null) {
+  getInstance (key = null) {
     if (key === null) {
-      return this.default();
+      return this.getDefaultInstance();
     }
 
-    return this._get(key);
+    return getInstance(this._instanceList, key);
   }
 
   /**
-   * @inheritdoc
+   * Checks if there is an instance already registered under the given key.
    *
-   * @throws {TypeError}  when given key is null
+   * @param {string} key the key to check
+   *
+   * @returns {boolean} true if there is, otherwise false
+   *
+   * @throws {TypeError} when given key is null
    */
   isRegistered (key) {
     if (key === null) {
       throw new TypeError('key cannot be null');
     }
 
-    return !!this._list[key];
+    return !!this._instanceList[key];
   }
 
   /**
-   * @inheritdoc
+   * Adds the given cache instance to the list. This will replace the existing
+   * instance if there is already an instance registered to the given key.
    *
-   * @throws {TypeError} when the given key is null, or the given instance is not an instance of `Cache`
+   * @param {string} key the key where to register the instance
+   * @param {import('@lambdadeltadot/cache-i').ICache} instance the instance to register
+   *
+   * @returns {this}
+   *
+   * @throws {ReferenceError} when the given key is null
    */
-  register (key, instance) {
+  registerInstance (key, instance) {
     if (key === null) {
       throw new TypeError('key cannot be null');
     }
 
-    if (!(instance instanceof Cache)) {
-      throw new TypeError('instance should be an instance of Cache');
-    }
-
-    this._list[key] = instance;
+    this._instanceList[key] = instance;
     return this;
   }
 
   /**
-   *  @inheritdoc
+   * Sets the default instance key for this manager.
    *
-   * @throws {ReferenceError} when the setting key does not exists
+   * @param {null|string} key the key to set as default, use null to use the first instance on the instance list
+   *
+   * @returns {this}
+   *
+   * @throws {ReferenceError} when the given key does not exists
    */
-  setDefault (key) {
+  setDefaultInstanceKey (key) {
     if (key === null || this.isRegistered(key)) {
-      this._default = key;
+      this._defaultInstanceKey = key;
       return this;
     }
 
-    throw new ReferenceError(`instance with key "${key}" is not registered`);
+    throw new ReferenceError(`instance with key "${key}" does not exists`);
   }
 
   /**
-   * @inheritdoc
+   * Removes the cache instance with the given key from the list.
    *
-   * @throws {TypeError} if key is null
+   * @param {string} key the key to unregister
+   *
+   * @returns {this}
+   *
+   * @throws {TypeError} when the given key is null
    */
-  unregister (key) {
+  unregisterInstance (key) {
     if (key === null) {
       throw new TypeError('key cannot be null');
     }
 
-    delete this._list[key];
+    delete this._instanceList[key];
     return this;
   }
 
-  /**
-   * Get the instance with key.
-   *
-   * @protected
-   *
-   * @param {string} key                      the key of the instance to get
-   *
-   * @returns {import('./Interface/Cache')}
-   *
-   * @throws {ReferenceError}                 when no instance registered with the given key
-   * @throws {TypeError}                      if key is null
-   */
-  _get (key) {
-    if (this.isRegistered(key)) {
-      return this._list[key];
-    }
+  // ================================================================================
+  // DEFAULT CACHE INTERFACE IMPLEMENTATION
+  // ================================================================================
 
-    throw new ReferenceError(`instance with key "${key}" is not registered`);
+  add (key, value, ttl) {
+    return this.getDefaultInstance().add(key, value, ttl);
+  }
+
+  decrement (key, amount) {
+    return this.getDefaultInstance().decrement(key, amount);
+  }
+
+  forever (key, value) {
+    return this.getDefaultInstance().forever(key, value);
+  }
+
+  forget (key) {
+    return this.getDefaultInstance().forget(key);
+  }
+
+  get (key, defaultValue) {
+    return this.getDefaultInstance().get(key, defaultValue);
+  }
+
+  has (key) {
+    return this.getDefaultInstance().has(key);
+  }
+
+  increment (key, amount) {
+    return this.getDefaultInstance().increment(key, amount);
+  }
+
+  missing (key) {
+    return this.getDefaultInstance().missing(key);
+  }
+
+  pull (key, defaultValue) {
+    return this.getDefaultInstance().pull(key, defaultValue);
+  }
+
+  put (key, value, ttl) {
+    return this.getDefaultInstance().put(key, value, ttl);
+  }
+
+  remember (key, ttl, generator) {
+    return this.getDefaultInstance().remember(key, ttl, generator);
+  }
+
+  rememberForever (key, generator) {
+    return this.getDefaultInstance().rememberForever(key, generator);
   }
 }
 
