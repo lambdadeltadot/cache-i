@@ -22,7 +22,7 @@ class CacheManager {
      *
      * @protected
      *
-     * @type {import('@lambdadeltadot/cache-i').CacheInstanceList}
+     * @type {import('./ICacheInstanceList')}
      */
     this._instanceList = {};
   }
