@@ -35,7 +35,7 @@ class CacheManager {
    * instance on the instance list if default instance key is
    * not yet set.
    *
-   * @returns {import('@lambdadeltadot/cache-i').ICache}
+   * @returns {import('./ICache')}
    *
    * @throws {RangeError} when instance list is empty and default instance key is not yet set
    * @throws {ReferenceError} when the currently set default key does not exists
@@ -58,7 +58,7 @@ class CacheManager {
    *
    * @param {string} [key=null] the key of the instance to get
    *
-   * @returns {import('@lambdadeltadot/cache-i').ICache} the instance with the given key, or the default instance if given key is null
+   * @returns {import('./ICache')} the instance with the given key, or the default instance if given key is null
    *
    * @throws {RangeError} when instance list is empty and given key is null
    * @throws {ReferenceError} when the given key does not exist
@@ -93,7 +93,7 @@ class CacheManager {
    * instance if there is already an instance registered to the given key.
    *
    * @param {string} key the key where to register the instance
-   * @param {import('@lambdadeltadot/cache-i').ICache} instance the instance to register
+   * @param {import('./ICache')} instance the instance to register
    *
    * @returns {this}
    *
@@ -147,51 +147,165 @@ class CacheManager {
   // ================================================================================
   // DEFAULT CACHE INTERFACE IMPLEMENTATION
   // ================================================================================
-
+  /**
+   * Saves the given value if the identifying key does not have a value yet.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {T} value the value to be saved
+   * @param {number|Date} ttl the time to live in milliseconds, or the date when the value will expire
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if key does not have a value yet and is successfully saved, or false if key already has value
+   *
+   * @template T
+   */
   add (key, value, ttl) {
     return this.getDefaultInstance().add(key, value, ttl);
   }
 
+  /**
+   * Decrements the value on the cache with the given amount.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {number} [amount] the amount to decrement
+   *
+   * @returns {Promise<number>} a promise that resolves to the value after decrementing
+   */
   decrement (key, amount) {
     return this.getDefaultInstance().decrement(key, amount);
   }
 
+  /**
+   * Saves the given value without expiration.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {T} value the value to be saved
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if successfully saved, otherwise false
+   *
+   * @template T
+   */
   forever (key, value) {
     return this.getDefaultInstance().forever(key, value);
   }
 
+  /**
+   * Removes the value of the identifying key from the cache.
+   *
+   * @param {string} key the key identifying the value to remove
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if existing and successfully removed, or false if key already not in the cache
+   */
   forget (key) {
     return this.getDefaultInstance().forget(key);
   }
 
+  /**
+   * Retrieves the value identified by the given key.
+   *
+   * @param {string} key the key that identifies the value to retrieve
+   * @param {T} [defaultValue] the value to return in case the key doesn't have a value
+   *
+   * @returns {Promise<T>} a promise that resolves to the value retrieved, or the default value if key doesn't have a value
+   *
+   * @template T
+   */
   get (key, defaultValue) {
     return this.getDefaultInstance().get(key, defaultValue);
   }
 
+  /**
+   * Determines whether the key has value.
+   *
+   * @param {string} key the key to check
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if has value, otherwise false
+   */
   has (key) {
     return this.getDefaultInstance().has(key);
   }
 
+  /**
+   * Increments the value on the cache with the given amount.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {number} [amount] the amount to increment
+   *
+   * @returns {Promise<number>} a promise that resolves to the value after incrementing
+   */
   increment (key, amount) {
     return this.getDefaultInstance().increment(key, amount);
   }
 
+  /**
+   * Determines whether the key doesn't have a value
+   *
+   * @param {string} key the key to check
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if doesn't have a value, otherwise false
+   */
   missing (key) {
     return this.getDefaultInstance().missing(key);
   }
 
+  /**
+   * Retrieves the value identified by the given key, then remove the value for
+   * that key on the cache.
+   *
+   * @param {string} key the key that identifies the value to retrieve
+   * @param {T} defaultValue the value to return in case the key doesn't have a value
+   *
+   * @returns {Promise<T>} a promise that resolves to the value retrieved, or the default value if key doesn't have a value
+   *
+   * @template T
+   */
   pull (key, defaultValue) {
     return this.getDefaultInstance().pull(key, defaultValue);
   }
 
+  /**
+   * Saves the given value to the cache.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {T} value the value to be saved
+   * @param {number|Date} ttl the time to live in milliseconds, or the date when the value will expire
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if successfully saved, otherwise false
+   *
+   * @template T
+   */
   put (key, value, ttl) {
     return this.getDefaultInstance().put(key, value, ttl);
   }
 
+  /**
+   * Retrieve the value from the cache. If the key doesn't have a value, the generator
+   * function will be used to create the value to be saved on the cache with the given
+   * ttl. After saving, the generated value will be returned.
+   *
+   * @param {string} key the unique key to identify the retrieving and saving value
+   * @param {number|Date} ttl the time to live in milliseconds or the date when the value will expire
+   * @param {() => T} generator the function used to generate the value to be saved
+   *
+   * @returns {Promise<T>} a promise that resolves to the retrieved value or the generated value
+   *
+   * @template T
+   */
   remember (key, ttl, generator) {
     return this.getDefaultInstance().remember(key, ttl, generator);
   }
 
+  /**
+   * Retrieve the value from the cache. If the key doesn't have a value, the generator
+   * function will be used to create the value to be saved on the cache forever. After
+   * saving, the generated value will be returned.
+   *
+   * @param {string} key the unique key to identify the retrieving and saving value
+   * @param {() => T} generator the function used to generate the value to be saved
+   *
+   * @returns {Promise<T>} a promise that resolves to the retrieved value or the generated value
+   *
+   * @template T
+   */
   rememberForever (key, generator) {
     return this.getDefaultInstance().rememberForever(key, generator);
   }
