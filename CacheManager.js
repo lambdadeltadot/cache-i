@@ -2,10 +2,11 @@ const getInstance = require('./utils/getInstance');
 
 /**
  * Manages multiple cache instances.
- *
- * @implements {import('@lambdadeltadot/cache-i').ICacheManager}
  */
 class CacheManager {
+  /**
+   * Creates an instance.
+   */
   constructor () {
     /**
      * The key of the instance that will be used as the default one.
