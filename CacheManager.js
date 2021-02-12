@@ -38,7 +38,7 @@ class CacheManager {
    *
    * @returns {import('./ICache')}
    *
-   * @throws {RangeError} when instance list is empty and default instance key is not yet set
+   * @throws {RangeError} when the default key is not yet set and the list is empty
    * @throws {ReferenceError} when the currently set default key does not exists
    */
   getDefaultInstance () {
@@ -94,11 +94,11 @@ class CacheManager {
    * instance if there is already an instance registered to the given key.
    *
    * @param {string} key the key where to register the instance
-   * @param {import('./ICache')} instance the instance to register
+   * @param {import('./ICache')} instance the instance to be registered
    *
    * @returns {this}
    *
-   * @throws {ReferenceError} when the given key is null
+   * @throws {TypeError} when the given key is null
    */
   registerInstance (key, instance) {
     if (key === null) {

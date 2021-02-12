@@ -72,7 +72,7 @@ declare interface ICache {
   increment (key: string, amount?: number): Promise<number>;
 
   /**
-   * Determines whether the key doesn't have a value
+   * Determines whether the key doesn't have a value.
    *
    * @param key the key to check
    *
@@ -92,7 +92,7 @@ declare interface ICache {
   pull<T> (key: string, defaultValue?: T): Promise<T>;
 
   /**
-   * Saves the given value to the cache.
+   * Saves the given value to the cache. Overwrite if existing.
    *
    * @param key the unique key to identify the saving value
    * @param value the value to be saved
