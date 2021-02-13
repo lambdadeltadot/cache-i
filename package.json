@@ -1,6 +1,6 @@
 {
   "name": "@lambdadeltadot/cache-i",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A simple cache interface inspired by the one Laravel is using, with its own cache manager.",
   "main": "index.js",
   "types": "./types/index.d.ts",
