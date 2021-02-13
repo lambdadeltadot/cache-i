@@ -1,7 +1,6 @@
 const CacheManager = require('../../CacheManager');
-const Cache = require('../../Interface/Cache');
 
-describe('CacheManager.prototype.default()', () => {
+describe('CacheManager.prototype.getDefaultInstance()', () => {
   /**
    * @type {CacheManager}
    */
@@ -13,73 +12,73 @@ describe('CacheManager.prototype.default()', () => {
 
   describe('default key is not yet set', () => {
     beforeEach(() => {
-      instance._default = null;
-      instance._list = {};
+      instance._defaultInstanceKey = null;
+      instance._instanceList = {};
     });
 
     describe('list is empty', () => {
       test('should throw RangeError', () => {
-        expect(() => instance.default()).toThrowError(RangeError);
+        expect(() => instance.getDefaultInstance()).toThrowError(RangeError);
       });
     });
 
     describe('list has one entry', () => {
       const key = 'key';
-      const cache = new Cache();
+      const cache = {};
 
       beforeEach(() => {
-        instance._list[key] = cache;
+        instance._instanceList[key] = cache;
       });
 
       test('should return that one entry', () => {
-        expect(instance.default()).toBe(cache);
+        expect(instance.getDefaultInstance()).toBe(cache);
       });
     });
 
     describe('list has more than one entry', () => {
       const entries = [
-        ['key1', new Cache()],
-        ['key2', new Cache()]
+        ['key1', {}],
+        ['key2', {}]
       ];
 
       beforeEach(() => {
         entries.forEach(([key, cache]) => {
-          instance._list[key] = cache;
+          instance._instanceList[key] = cache;
         });
       });
 
       test('should return the first entry added', () => {
-        expect(instance.default()).toBe(entries[0][1]);
-        expect(instance.default()).not.toBe(entries[1][1]);
+        expect(instance.getDefaultInstance()).toBe(entries[0][1]);
+        expect(instance.getDefaultInstance()).not.toBe(entries[1][1]);
       });
     });
   });
 
   describe('default key is set', () => {
     const defaultKey = 'default';
-    const defaultValue = new Cache();
+    const defaultValue = {};
 
     beforeEach(() => {
-      instance._default = defaultKey;
+      instance._defaultInstanceKey = defaultKey;
     });
 
     describe('default key is not registered', () => {
       beforeEach(() => {
-        delete instance._list[defaultKey];
+        delete instance._instanceList[defaultKey];
       });
 
       test('should throw Reference error', () => {
-        expect(() => instance.default()).toThrowError(ReferenceError);
+        expect(() => instance.getDefaultInstance()).toThrowError(ReferenceError);
       });
     });
 
     describe('default key is registered', () => {
       beforeEach(() => {
-        instance._list[defaultKey] = defaultValue;
+        instance._instanceList[defaultKey] = defaultValue;
       });
 
       test('should return the instance saved to the default key', () => {
-        expect(instance.default()).toBe(defaultValue);
+        expect(instance.getDefaultInstance()).toBe(defaultValue);
       });
     });
   });

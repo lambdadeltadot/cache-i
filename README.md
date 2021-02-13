@@ -1,6 +1,6 @@
 # cache-i
 
-A simple cache interface inspired by the one Laravel is using. This package includes the interface for the `Cache` and `CacheManager`.
+A simple cache manager inspired by the one Laravel is using.
 
 ## Installation
 
@@ -18,11 +18,12 @@ yarn add @lambdadeltadot/cache-i
 
 ## Compatibility
 
-Currently, this package is expected to be used only for node applications only with version `>=10.0.0`. This may not work on `browser` environments.
+Currently, this package is expected to be used on engines that supports **ES6** `class`.
+
 
 ## Cache Manager
 
-The cache manager stores the `Cache` instance to be used throughout your application.
+The cache manager stores the `Cache` implementations that will be used throughout your application.
 
 ### Usage
 
@@ -39,106 +40,81 @@ const CacheManager = require('@lambdadeltadot/cache-i/CacheManager');
 const manager = new CacheManager();
 ```
 
-If you are not satisfied with the current implementation of a method of the `CacheManager`, you can create a new class that extends `CacheManager` then override the method you want to override.
-
-```js
-const BaseCacheManager = require('@lambdadeltadot/cache-i/CacheManager');
-
-class CacheManager extends BaseCacheManager {
-  // override implementation here
-}
-
-const manager = new CacheManager();
-```
-
-You can also create your own implementation of the `CacheManager`, just create a class then extends it from `@lambdadeltadot/cache-i/Interface/CacheManager`. Check out the `Methods` section of the `CacheManager` for the methods to implement.
-
-```js
-const CacheManagerInterface = require('@lambdadeltadot/cache-i/Interface/CacheManager');
-
-class CacheManager extends CacheManagerInterface {
-  // your own implementation
-}
-
-const manager = new CacheManager();
-```
-
-
 ### Methods
 
-Below are the methods for the cache manager.
+Below are the methods unique to `CacheManager`. The `CacheManager` also implements the `ICache` interface, it will just pass the call to the default registered instance.
 
-#### default ()
+#### getDefaultInstance ()
 
-Get the default instance if it exists. Will get the first instance on the manager's list if default is not yet set.
+Get the default instance if it exists. Will get the first instance on the instance list if default instance key is not yet set.
 
-- **Returns** `{Cache}`
-- **Throws** `{RangeError}`: when the manager's list is empty
+- **Returns** `{ICache}`
+- **Throws** `{RangeError}`: when the default key is not yet set and the list is empty
 - **Throws** `{ReferenceError}`: when the currently set default key does not exists
 
 ```js
-const defaultCache = manager.default();
+const defaultCache = manager.getDefaultInstance();
 defaultCache.get('code', null);
 ```
 
-#### instance (key)
+#### getInstance (key)
 
-Get the instance with the given key.
+Get the instance with the given key. If given key is null, returns the default instance.
 
-- **Param** `{string} [key=null]`: the key of the instance to get, get the default instance if null
-- **Returns** `{Cache}: the instance with the given key, or the default instance if given key is null
-- **Throws** `{RangeError}`: when given key is null and the manager's list is empty
+- **Param** `{string} [key=null]`: the key of the instance to get
+- **Returns** `{ICache}: the instance with the given key, or the default instance if given key is null
+- **Throws** `{RangeError}`: when instance list is empty and given key is null
 - **Throws** `{ReferenceError}`: when the given key is not null and that key does not exists on the list
 
 ```js
-const defaultCache = manager.instance();
-defaultCache.get('key', null);
+const defaultCache = manager.getInstance();
+defaultCache.getInstance('key', null);
 
-const redisCache = manager.instance('redis');
-redisCache.get('key', null);
+const memoryCache = manager.getInstance('memory');
+memoryCache.get('key', null);
 ```
 
 #### isRegistered (key)
 
-Checks if there is an instance registered with the given key.
+Checks if there is an instance already registered under the given key.
 
 - **Param** `{string} key`: the key to check
 - **Returns** `{boolean}`: true if there is an instance registered with given key, otherwise false
-- **Throws** `TypeError`: when given key is null
+- **Throws** `{TypeError}`: when given key is null
 
 ```js
-if (manager.isRegistered('redis')) {
-  const redisCache = manager.instance('redis');
-  redisCache.get('key', null);
+if (manager.isRegistered('memory')) {
+  const memoryCache = manager.getInstance('memory');
+  memoryCache.get('key', null);
 }
 ```
 
-#### register (key, instance)
+#### registerInstance (key, instance)
 
-Add the cache instance to the list. This will replace existing instance on the given key if there is already an instance registered to that key.
+Adds the given cache instance to the list. This will replace the existing instance if there is already an instance registered to the given key.
 
 - **Param** `{string} key`: the key where to register the given instance
-- **Param** `{Cache} instance`: the instance to be registered
-- **Returns** `{this}`: the cache manager for method chaining
-- **Throws** `{TypeError}`: when the given key is null, or the given instance is not an instance of `Cache`
+- **Param** `{ICache} instance`: the instance to be registered
+- **Returns** `{this}`
+- **Throws** `{TypeError}`: when the given key is null
 
 ```js
-manager.register('redis', new RedisCache())
-  .register('file', new FileCache());
+manager.registerInstance('memory', new MemoryCache())
+  .registerInstance('file', new FileCache());
 ```
 
-#### setDefault (key)
+#### setDefaultInstanceKey (key)
 
-Sets the default key for this manager.
+Sets the default instance key for this manager.
 
-- **Param** `{null|string} key`: the key to set, or null to use the first key in the cache
-- **Returns** `{this}`: the cache manager for method chaining
+- **Param** `{null|string} key`: the key to set as default, use null to use the first instance on the instance list
+- **Returns** `{this}`
 - **Throws** `{ReferenceError}`: when the setting key does not exists
 
 ```js
 manager.register('redis', new RedisCache())
-  .setDefault('redis')
-  .default()
+  .setDefaultInstanceKey('redis')
+  .getDefaultInstance()
   .get('key', null);
 ```
 
@@ -147,33 +123,46 @@ manager.register('redis', new RedisCache())
 Removes the cache instance with the given key from the list.
 
 - **Param** `{string} key`: the key to unregister
-- **Returns** `{this}`: the cache manager for method chaining
+- **Returns** `{this}`
+- **Throws** `{TypeError}`: when the given key is null
 
 ```js
 manager.unregister('redis');
 ```
 
-## Cache
+## ICache
 
-The interface to use for classes that can be registered to the cache manager.
+The interface for all Cache implementation.
 
 ### Usage
 
-As this class is acting as an interface, you must create a class, extends it with the interface, then implements its method. After that you can create an instance of the newly created class then register it on the `CacheManager`.
+As this is just an interface, you just need to create a class or object implementing the methods of this interface. You can also just implement the methods you think you will use.
 
 ```js
-const Cache = require('@lambdadeltadot/cache-i/Interface/Cache');
-const manager = require('@lambdadeltadot/cache-i');
+class FileCache {
+  add (key, value, ttl) {
+    // add implementation here
+  }
 
-class MemoryCache extends Cache {
-  // method implementation here
+  // other method implementation here
 }
 
-const memoryCache = new MemoryCache();
+manager.register('file', new FileCache());
+```
+
+```
+const memoryCache = {
+  add (key, value, ttl) {
+  	// add implementation here
+  }
+
+  // other method implementation here
+}
+
 manager.register('memory', memoryCache);
 ```
 
-Note that all implementations must be `asynchronous`. This can be achieve by returning a promise:
+Note that every method must return a `Promise`. You can also use `async` methods as they returns `Promise`.
 
 ```js
 class MemoryCache extends Cache {
@@ -182,36 +171,28 @@ class MemoryCache extends Cache {
   }
 
   has (key) {
-    return Promise.resolve(this._cache[key]);
+    return Promise.resolve(!!this._cache[key]);
+  }
+
+  async missing (key) {
+    return !this._cache[key];
   }
 }
 ```
 
-or declaring the method as `async`.
+### Methods To Implement
 
-```js
-const fs = require('fs').promises;
-
-class FileCache extends Cache {
-  async has (key) {
-    const exists = await fs.exists(`${basePath}/${key}`);
-    return exists;
-  }
-}
-```
-
-### Methods
-
-Below are the methods of the `Cache` interface that you need to implement and their example usage.
+Below are the methods of the `ICache` interface that you need to implement and their example usage.
 
 #### add (key, value, ttl)
 
-Add the given value if the key does not yet exists on the cache.
+Saves the given value if the identifying key does not have a value yet.
 
-- **Param** `{string} key`: the key to identify the value saved
-- **Param** `{any} value`: the value being saved
-- **Param** `{number|Date} ttl`: the time to live in seconds or the date when the value will expire
-- **Returns** `{Promise<boolean>}`: resolves to true if key not exists and successfully saved, or false if already exists
+- **Generic Type** `{T}`: The type of the saving value.
+- **Param** `{string} key`: the unique key to identify the saving value
+- **Param** `{T} value`: the value to be saved
+- **Param** `{number|Date} ttl`: the time to live in milliseconds, or the date when the value will expire
+- **Returns** `{Promise<boolean>}`: a promise that resolves to true if key does not have a value yet and is successfully saved, or false if key already has value
 
 ```js
 cache.add('key', 'value', new Date(Date.now() + 60000))
@@ -225,9 +206,9 @@ cache.add('key', 'value', (Date.now() + 60000) / 1000)
 
 Decrements the value on the cache with the given amount.
 
-- **Param** `{string} key`: the key to identify the decrementing value
+- **Param** `{string} key`: the unique key to identify the saving value
 - **Param** `{number} [amount=1]`: the amount to decrement
-- **Returns** `{number}`: resolves to the value after decrement
+- **Returns** `{Promise<number>}`: a promise that resolves to the value after decrementing
 
 ```js
 cache.decrement('key')
@@ -239,11 +220,12 @@ cache.decrement('key', 5)
 
 #### forever (key, value)
 
-Adds the given value without expiration.
+Saves the given value without expiration.
 
-- **Param** `{string} key`: the key to identify the value saved
-- **Param** `{any} value`: the value being saved
-- **Returns** `{Promise<boolean>}`: resolves to true if successfully saved, otherwise false
+- **Generic Type** `{T}`: The type of the saving value.
+- **Param** `{string} key`: the unique key to identify the saving value
+- **Param** `{T} value`: the value to be saved.
+- **Returns** `{Promise<boolean>}`: a promise that resolves to true if successfully saved, otherwise false
 
 ```js
 cache.forever('key', 'value')
@@ -252,10 +234,10 @@ cache.forever('key', 'value')
 
 #### forget (key)
 
-Removes the entry with the given key.
+Removes the value of the identifying key from the cache.
 
-- **Param** `{string} key`L the key of the entry to forget
-- **Returns** `{Promise<boolean>}`: resolves to true if key exists and successfully removed, or false if key does not exists
+- **Param** `{string} key`: the key identifying the value to remove
+- **Returns** `{Promise<boolean>}`: a promise that resolves to true if existing and successfully removed, or false if key already not in the cache
 
 ```js
 cache.forget('key')
@@ -264,11 +246,12 @@ cache.forget('key')
 
 #### get (key, defaultValue)
 
-Retrieves the value with the given key.
+Retrieves the value identified by the given key.
 
-- **Param** `{string} key`: the key to identify the value to retrieve
-- **Param** `{any} [defaultValue]`: the value to return if key does not exists or is already expired
-- **Returns** `{Promise<any>}`: resolves to the value retrieved, or the default value if key does not exists or is already expired
+- **Generic Type** `{T}`: The type of the resolved value.
+- **Param** `{string} key`: the key that identifies the value to retrieve
+- **Param** `{T} [defaultValue]`: the value to return in case the key doesn't have a value
+- **Returns** `{Promise<T>}`: a promise that resolves to the value retrieved, or the default value if key doesn't have a value
 
 ```js
 cache.get('key', null)
@@ -277,10 +260,10 @@ cache.get('key', null)
 
 #### has (key)
 
-Determines whether the key exists on the cache and is not yet expired.
+Determines whether the key has value.
 
 - **Param** `{string} key`: the key to check
-- **Returns** `{Promise<boolean>}`: resolves to true if exists and is not yet expired, otherwise false
+- **Returns** `{Promise<boolean>}`: a promise that resolves to true if has value, otherwise false
 
 ```js
 cache.has('key')
@@ -291,9 +274,9 @@ cache.has('key')
 
 Increments the value on the cache with the given amount.
 
-- **Param** `{string} key`: the key to identify the incrementing value
+- **Param** `{string} key`: the unique key to identify the saving value
 - **Param** `{number} [amount=1]`: the amount to increment
-- **Returns** `{number}`: resolves to the value after increment
+- **Returns** `{Promise<number>}`: a promise that resolves to the value after incrementing
 
 ```js
 cache.increment('key')
@@ -305,10 +288,10 @@ cache.increment('key', 5)
 
 #### missing (key)
 
-Determines whether the key does not exists.
+Determines whether the key doesn't have a value.
 
 - **Param** `{string} key`: the key to check
-- **Returns** `{Promise<boolean>}`: resolves to true if not exists and or is expired, otherwise false
+- **Returns** `{Promise<boolean>}`: a promise that resolves to true if doesn't have a value, otherwise false
 
 ```js
 cache.has('key')
@@ -317,11 +300,12 @@ cache.has('key')
 
 #### pull (key, defaultValue)
 
-Remove the entry with the given key from the cache, then return that value of that entry.
+Retrieves the value identified by the given key, then remove the value for that key on the cache.
 
-- **Param** `{string} key`: the key of the entry to pull
-- **Param** `{any} [defaultValue]`: the value to return if key does not exists or is already expired
-- **Returns** `{Promise<any>}`: resolves to the value retrieved, or the default value if key does not exists or is already expired
+- **Generic Type** `{T}`: The type of the resolved value.
+- **Param** `{string} key`: the key that identifies the value to retrieve
+- **Param** `{T} [defaultValue]`: the value to return in case the key doesn't have a value
+- **Returns** `{Promise<T>}`: a promise that resolves to the value retrieved, or the default value if key doesn't have a value
 
 ```js
 cache.pull('key', null)
@@ -330,12 +314,13 @@ cache.pull('key', null)
 
 #### put (key, value, ttl)
 
-Sets the value on the cache.
+Saves the given value to the cache. Overwrite if existing.
 
-- **Param** `{string} key`: the key to identify the value saved
-- **Param** `{any} value`: the value being saved
-- **Param** `{number|Date} ttl`: the time to live in seconds or the date when the value will expire
-- **Returns** `{Promise<boolean>}`: resolves to true if successfully saved
+- **Generic Type** `{T}`: The type of the saving value.
+- **Param** `{string} key`: the unique key to identify the saving value
+- **Param** `{T} value`: the value to be saved
+- **Param** `{number|Date} ttl`: the time to live in milliseconds, or the date when the value will expire
+- **Returns** `{Promise<boolean>}`: a promise that resolves to true if successfully saved, otherwise false
 
 ```js
 cache.put('key', 'value', new Date(Date.now() + 60000))
@@ -347,12 +332,13 @@ cache.put('key', 'value', (Date.now() + 60000) / 1000)
 
 #### remember (key, ttl, generator)
 
-Retrieve the value from the cache. If key does not exists, the generator will be used to create the value to be saved on the cache with the given ttl. After saving, the generated value will be returned.
+Retrieve the value from the cache. If the key doesn't have a value, the generator function will be used to create the value to be saved on the cache with the given ttl. After saving, the generated value will be returned.
 
-- **Param** `{string} key`: the key to identify the value saved
-- **Param** `{number|Date} ttl`: the time to live in seconds or the date when the value will expire
+- **Generic Type** `{T}`: The type of the retrieved or saved value.
+- **Param** `{string} key`: the unique key to identify the retrieving and saving value
+- **Param** `{number|Date} ttl`: the time to live in milliseconds or the date when the value will expire
 - **Param** `{() => any} generator`: the function used to generate the value to be saved
-- **Returns** `{Promise<any>}`: resolves to the retrieved value or the generated value
+- **Returns** `{Promise<any>}`: a promise that resolves to the retrieved value or the generated value
 
 ```js
 cache.remember('key', new Date(Date.now() + 60000), () => 'value')
@@ -364,11 +350,12 @@ cache.remember('key', (Date.now() + 60000) / 1000, () => 'value')
 
 #### rememberForever (key, generator)
 
-Retrieve the value from the cache. If key does not exists, the generator will be used to create the value to be saved on the cache without expiration. After saving, the generated value will be returned.
+Retrieve the value from the cache. If the key doesn't have a value, the generator function will be used to create the value to be saved on the cache forever. After saving, the generated value will be returned.
 
-- **Param** `{string} key`: the key to identify the value saved
+- **Generic Type** `{T}`: The type of the retrieved or saved value.
+- **Param** `{string} key`: the unique key to identify the retrieving and saving value
 - **Param** `{() => any} generator`: the function used to generate the value to be saved
-- **Returns** `{Promise<any>}`: resolves to the retrieved value or the generated value
+- **Returns** `{Promise<any>}`: a promise that resolves to the retrieved value or the generated value
 
 ```js
 cache.rememberForever('key', () => 'value')

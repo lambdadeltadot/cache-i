@@ -1,147 +1,314 @@
-const BaseCacheManager = require('./Interface/CacheManager');
-const Cache = require('./Interface/Cache');
+const getInstance = require('./utils/getInstance');
 
 /**
  * Manages multiple cache instances.
- *
- * @extends {BaseCacheManager}
  */
-class CacheManager extends BaseCacheManager {
+class CacheManager {
   /**
    * Creates an instance.
    */
   constructor () {
-    super();
-
     /**
-     * The key of the instance that will be used as the
-     * default one.
+     * The key of the instance that will be used as the default one.
      *
      * @protected
      *
      * @type {null|string}
      */
-    this._default = null;
+    this._defaultInstanceKey = null;
 
     /**
-     * The list of instances.
+     * The list of cache instance registered to this manager.
      *
      * @protected
      *
-     * @type {{[key: string]: import('./Interface/Cache')}}
+     * @type {import('./ICacheInstanceList')}
      */
-    this._list = {};
+    this._instanceList = {};
   }
 
+  // ================================================================================
+  // CACHE MANAGER IMPLEMENTATION
+  // ================================================================================
+
   /**
-   * @inheritdoc
+   * Get the default instance if it exists. Will get the first
+   * instance on the instance list if default instance key is
+   * not yet set.
    *
-   * @throws {RangeError}     when the manager's list is empty
+   * @returns {import('./ICache')}
+   *
+   * @throws {RangeError} when the default key is not yet set and the list is empty
    * @throws {ReferenceError} when the currently set default key does not exists
    */
-  default () {
-    if (this._default === null) {
-      for (const key in this._list) { // eslint-disable-line no-unreachable-loop
-        return this._list[key];
+  getDefaultInstance () {
+    if (this._defaultInstanceKey === null) {
+      for (const key in this._instanceList) { // eslint-disable-line no-unreachable-loop
+        return this._instanceList[key];
       }
 
-      throw new RangeError('list is empty');
+      throw new RangeError('instance list is empty');
     }
 
-    return this._get(this._default);
+    return getInstance(this._instanceList, this._defaultInstanceKey);
   }
 
   /**
-   * @inheritdoc
+   * Get the instance with the given key. If given key is null, returns the
+   * default instance.
    *
-   * @throws {RangeError}     when given key is null and the manager's list is empty
-   * @throws {ReferenceError} when the given key is not null and that key does not exists on the list
+   * @param {string} [key=null] the key of the instance to get
+   *
+   * @returns {import('./ICache')} the instance with the given key, or the default instance if given key is null
+   *
+   * @throws {RangeError} when instance list is empty and given key is null
+   * @throws {ReferenceError} when the given key does not exist
    */
-  instance (key = null) {
+  getInstance (key = null) {
     if (key === null) {
-      return this.default();
+      return this.getDefaultInstance();
     }
 
-    return this._get(key);
+    return getInstance(this._instanceList, key);
   }
 
   /**
-   * @inheritdoc
+   * Checks if there is an instance already registered under the given key.
    *
-   * @throws {TypeError}  when given key is null
+   * @param {string} key the key to check
+   *
+   * @returns {boolean} true if there is, otherwise false
+   *
+   * @throws {TypeError} when given key is null
    */
   isRegistered (key) {
     if (key === null) {
       throw new TypeError('key cannot be null');
     }
 
-    return !!this._list[key];
+    return !!this._instanceList[key];
   }
 
   /**
-   * @inheritdoc
+   * Adds the given cache instance to the list. This will replace the existing
+   * instance if there is already an instance registered to the given key.
    *
-   * @throws {TypeError} when the given key is null, or the given instance is not an instance of `Cache`
+   * @param {string} key the key where to register the instance
+   * @param {import('./ICache')} instance the instance to be registered
+   *
+   * @returns {this}
+   *
+   * @throws {TypeError} when the given key is null
    */
-  register (key, instance) {
+  registerInstance (key, instance) {
     if (key === null) {
       throw new TypeError('key cannot be null');
     }
 
-    if (!(instance instanceof Cache)) {
-      throw new TypeError('instance should be an instance of Cache');
-    }
-
-    this._list[key] = instance;
+    this._instanceList[key] = instance;
     return this;
   }
 
   /**
-   *  @inheritdoc
+   * Sets the default instance key for this manager.
    *
-   * @throws {ReferenceError} when the setting key does not exists
+   * @param {null|string} key the key to set as default, use null to use the first instance on the instance list
+   *
+   * @returns {this}
+   *
+   * @throws {ReferenceError} when the given key does not exists
    */
-  setDefault (key) {
+  setDefaultInstanceKey (key) {
     if (key === null || this.isRegistered(key)) {
-      this._default = key;
+      this._defaultInstanceKey = key;
       return this;
     }
 
-    throw new ReferenceError(`instance with key "${key}" is not registered`);
+    throw new ReferenceError(`instance with key "${key}" does not exists`);
   }
 
   /**
-   * @inheritdoc
+   * Removes the cache instance with the given key from the list.
    *
-   * @throws {TypeError} if key is null
+   * @param {string} key the key to unregister
+   *
+   * @returns {this}
+   *
+   * @throws {TypeError} when the given key is null
    */
-  unregister (key) {
+  unregisterInstance (key) {
     if (key === null) {
       throw new TypeError('key cannot be null');
     }
 
-    delete this._list[key];
+    delete this._instanceList[key];
     return this;
   }
 
+  // ================================================================================
+  // DEFAULT CACHE INTERFACE IMPLEMENTATION
+  // ================================================================================
   /**
-   * Get the instance with key.
+   * Saves the given value if the identifying key does not have a value yet.
    *
-   * @protected
+   * @param {string} key the unique key to identify the saving value
+   * @param {T} value the value to be saved
+   * @param {number|Date} ttl the time to live in milliseconds, or the date when the value will expire
    *
-   * @param {string} key                      the key of the instance to get
+   * @returns {Promise<boolean>} a promise that resolves to true if key does not have a value yet and is successfully saved, or false if key already has value
    *
-   * @returns {import('./Interface/Cache')}
-   *
-   * @throws {ReferenceError}                 when no instance registered with the given key
-   * @throws {TypeError}                      if key is null
+   * @template T
    */
-  _get (key) {
-    if (this.isRegistered(key)) {
-      return this._list[key];
-    }
+  add (key, value, ttl) {
+    return this.getDefaultInstance().add(key, value, ttl);
+  }
 
-    throw new ReferenceError(`instance with key "${key}" is not registered`);
+  /**
+   * Decrements the value on the cache with the given amount.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {number} [amount] the amount to decrement
+   *
+   * @returns {Promise<number>} a promise that resolves to the value after decrementing
+   */
+  decrement (key, amount) {
+    return this.getDefaultInstance().decrement(key, amount);
+  }
+
+  /**
+   * Saves the given value without expiration.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {T} value the value to be saved
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if successfully saved, otherwise false
+   *
+   * @template T
+   */
+  forever (key, value) {
+    return this.getDefaultInstance().forever(key, value);
+  }
+
+  /**
+   * Removes the value of the identifying key from the cache.
+   *
+   * @param {string} key the key identifying the value to remove
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if existing and successfully removed, or false if key already not in the cache
+   */
+  forget (key) {
+    return this.getDefaultInstance().forget(key);
+  }
+
+  /**
+   * Retrieves the value identified by the given key.
+   *
+   * @param {string} key the key that identifies the value to retrieve
+   * @param {T} [defaultValue] the value to return in case the key doesn't have a value
+   *
+   * @returns {Promise<T>} a promise that resolves to the value retrieved, or the default value if key doesn't have a value
+   *
+   * @template T
+   */
+  get (key, defaultValue) {
+    return this.getDefaultInstance().get(key, defaultValue);
+  }
+
+  /**
+   * Determines whether the key has value.
+   *
+   * @param {string} key the key to check
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if has value, otherwise false
+   */
+  has (key) {
+    return this.getDefaultInstance().has(key);
+  }
+
+  /**
+   * Increments the value on the cache with the given amount.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {number} [amount] the amount to increment
+   *
+   * @returns {Promise<number>} a promise that resolves to the value after incrementing
+   */
+  increment (key, amount) {
+    return this.getDefaultInstance().increment(key, amount);
+  }
+
+  /**
+   * Determines whether the key doesn't have a value
+   *
+   * @param {string} key the key to check
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if doesn't have a value, otherwise false
+   */
+  missing (key) {
+    return this.getDefaultInstance().missing(key);
+  }
+
+  /**
+   * Retrieves the value identified by the given key, then remove the value for
+   * that key on the cache.
+   *
+   * @param {string} key the key that identifies the value to retrieve
+   * @param {T} defaultValue the value to return in case the key doesn't have a value
+   *
+   * @returns {Promise<T>} a promise that resolves to the value retrieved, or the default value if key doesn't have a value
+   *
+   * @template T
+   */
+  pull (key, defaultValue) {
+    return this.getDefaultInstance().pull(key, defaultValue);
+  }
+
+  /**
+   * Saves the given value to the cache.
+   *
+   * @param {string} key the unique key to identify the saving value
+   * @param {T} value the value to be saved
+   * @param {number|Date} ttl the time to live in milliseconds, or the date when the value will expire
+   *
+   * @returns {Promise<boolean>} a promise that resolves to true if successfully saved, otherwise false
+   *
+   * @template T
+   */
+  put (key, value, ttl) {
+    return this.getDefaultInstance().put(key, value, ttl);
+  }
+
+  /**
+   * Retrieve the value from the cache. If the key doesn't have a value, the generator
+   * function will be used to create the value to be saved on the cache with the given
+   * ttl. After saving, the generated value will be returned.
+   *
+   * @param {string} key the unique key to identify the retrieving and saving value
+   * @param {number|Date} ttl the time to live in milliseconds or the date when the value will expire
+   * @param {() => T} generator the function used to generate the value to be saved
+   *
+   * @returns {Promise<T>} a promise that resolves to the retrieved value or the generated value
+   *
+   * @template T
+   */
+  remember (key, ttl, generator) {
+    return this.getDefaultInstance().remember(key, ttl, generator);
+  }
+
+  /**
+   * Retrieve the value from the cache. If the key doesn't have a value, the generator
+   * function will be used to create the value to be saved on the cache forever. After
+   * saving, the generated value will be returned.
+   *
+   * @param {string} key the unique key to identify the retrieving and saving value
+   * @param {() => T} generator the function used to generate the value to be saved
+   *
+   * @returns {Promise<T>} a promise that resolves to the retrieved value or the generated value
+   *
+   * @template T
+   */
+  rememberForever (key, generator) {
+    return this.getDefaultInstance().rememberForever(key, generator);
   }
 }
 

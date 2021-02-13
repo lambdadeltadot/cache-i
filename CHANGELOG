@@ -1,0 +1,23 @@
+## 1.0.0 (February 12, 2021)
+
+- removes both `CacheManager` and `Cache` interfaces
+
+### CacheManager
+
+- rename `default()` method to `getDefaultInstance()`
+- rename `instance(key)` method to `getInstance(key)`
+- rename `register(key, instance)` method to `registerInstance(key, instance)`
+- rename `setDefault(key)` method to `setDefaultInstanceKey(key)`
+- rename `unregister(key)` method to `unregisterInstance(key)`
+- implements the `ICache` interface to this class
+- add `null` checking when unregistering an instance
+- remove `instanceof Cache` checking when registering an instance (as `Cache` class interface is removed)
+
+### ICache
+
+- creates a definition file for this interface
+- change the all `ttl` unit from `seconds` to `milliseconds`
+
+## 0.1.0 (January 24, 2021)
+
+- Initial Release

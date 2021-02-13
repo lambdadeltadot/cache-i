@@ -1,5 +1,4 @@
 const CacheManager = require('../../CacheManager');
-const Cache = require('../../Interface/Cache');
 
 describe('CacheManager.prototype.isRegistered(key)', () => {
   /**
@@ -22,7 +21,7 @@ describe('CacheManager.prototype.isRegistered(key)', () => {
 
     describe('key does not exists', () => {
       beforeEach(() => {
-        delete instance._list[key];
+        delete instance._instanceList[key];
       });
 
       test('should return false', () => {
@@ -32,7 +31,7 @@ describe('CacheManager.prototype.isRegistered(key)', () => {
 
     describe('key does exists', () => {
       beforeEach(() => {
-        instance._list[key] = new Cache();
+        instance._instanceList[key] = {};
       });
 
       test('should return true', () => {

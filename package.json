@@ -1,11 +1,9 @@
 {
   "name": "@lambdadeltadot/cache-i",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "A simple cache interface inspired by the one Laravel is using, with its own cache manager.",
   "main": "index.js",
-  "engines": {
-    "node": ">=10.0.0"
-  },
+  "types": "./types/index.d.ts",
   "scripts": {
     "eslint": "eslint . --no-error-on-unmatched-pattern",
     "eslint:fix": "eslint . --no-error-on-unmatched-pattern --fix",
