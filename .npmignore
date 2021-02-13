@@ -1,4 +1,3 @@
-/tests/
-/.eslintrc.js
-/.huskyrc
-/CHANGELOG
+/tests/**
+.eslintrc.js
+.huskyrc
